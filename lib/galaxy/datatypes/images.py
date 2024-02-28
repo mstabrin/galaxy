@@ -336,17 +336,119 @@ class Mrc2014(Binary):
     """
 
     file_ext = "mrc"
+    MetadataElement(
+        name="map_mode",
+        desc="Map mode",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="number_of_columns",
+        desc="Number of columns",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="number_of_rows",
+        desc="Number of rows",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="number_of_sections",
+        desc="Number of sections",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="pixel_spacing_columns",
+        desc="Pixel spacing columns",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="pixel_spacing_rows",
+        desc="Pixel spacing rows",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="pixel_spacing_sections",
+        desc="Pixel spacing sections",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="minimum_density",
+        desc="Minimum density",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="maximum_density",
+        desc="Maximum density",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+    MetadataElement(
+        name="mean_density",
+        desc="Mean density",
+        visible=True,
+        readonly=True,
+        optional=True,
+        default=-1,
+    )
+
+    @staticmethod
+    def _load_file(filename: str, header_only: bool = True, permissive: bool = False):
+        return mrcfile.load_functions.open(filename, header_only=header_only, permissive=permissive)
 
     def sniff(self, filename: str) -> bool:
         try:
             # An exception is thrown
             # if the file is not an
             # mrc2014 file.
-            mrcfile.load_functions.open(filename, header_only=True)
+            header_file = self._load_file(filename)
+            header_file.close()
             return True
         except Exception:
             return False
 
+    def set_meta(
+        self, dataset: DatasetProtocol, overwrite: bool = True, metadata_tmp_files_dir: Optional[str] = None, **kwd
+    ) -> None:
+        header_file = self._load_file(dataset.get_file_name())
+        try:
+            dataset.metadata.map_mode = int(header_file.header.mode)
+            dataset.metadata.number_of_columns = int(header_file.header.nx)
+            dataset.metadata.number_of_rows = int(header_file.header.ny)
+            dataset.metadata.number_of_sections = int(header_file.header.nz)
+            dataset.metadata.pixel_spacing_columns = float(header_file.voxel_size.x)
+            dataset.metadata.pixel_spacing_rows = float(header_file.voxel_size.y)
+            dataset.metadata.pixel_spacing_sections = float(header_file.voxel_size.z)
+            dataset.metadata.minimum_density = float(header_file.header.dmin)
+            dataset.metadata.maximum_density = float(header_file.header.dmax)
+            dataset.metadata.mean_density = float(header_file.header.dmean)
+        finally:
+            header_file.close()
 
 class Gmaj(data.Data):
     """Deprecated class. Exists for limited backwards compatibility."""
